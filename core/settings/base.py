@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import os
+import tempfile
+import sys
 from pathlib import Path
 
 import environ
@@ -31,6 +33,8 @@ SECRET_KEY = env.str("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG")
+
+TESTING = True if (len(sys.argv) > 1 and sys.argv[1] == "test") else False
 
 ALLOWED_HOSTS = ["*"]
 
@@ -166,6 +170,17 @@ CACHES = {
         "KEY_PREFIX": "boilerplate",  # todo: you must change this with your project name or something else
     }
 }
+
+
+if TESTING:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        }
+    }
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+    MEDIA_ROOT = tempfile.mkdtemp()
+    CELERY_TASK_ALWAYS_EAGER = True
 
 # CELERY CONFIGURATION
 CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", "redis://localhost:6379")
