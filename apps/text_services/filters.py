@@ -12,10 +12,20 @@ from apps.text_services.q_processors import QLatinCyrillicProcessor
 
 class MultiSymbolSearchFilter(SearchFilter):
     @staticmethod
-    def process_terms(processor: QLatinCyrillicProcessor, terms: List[str], orm_lookups: List[str]) -> List[Q]:
-        joined_terms = " ".join(terms)
-        processed_terms = processor.process(joined_terms).split(" ")
-        return [Q(**{orm_lookup: term}) for term in processed_terms for orm_lookup in orm_lookups]
+    def process_terms(processor: QLatinCyrillicProcessor, terms: List[str]) -> List['str']:
+        processed_terms = [processor.process(term) for term in terms]
+        return processed_terms
+
+    @staticmethod
+    def process_conditions(terms: List[str], orm_lookups: List[str]) -> List[Q]:
+        conditions = []
+        for search_term in terms:
+            queries = [
+                Q(**{orm_lookup: search_term})
+                for orm_lookup in orm_lookups
+            ]
+            conditions.append(reduce(operator.or_, queries))
+        return conditions
 
     def filter_queryset(self, request, queryset, view):
         search_fields = self.get_search_fields(view, request)
@@ -29,8 +39,10 @@ class MultiSymbolSearchFilter(SearchFilter):
 
         orm_lookups = [self.construct_search(str(search_field)) for search_field in search_fields]
         base = queryset
-        latin_conditions = self.process_terms(latin_processor, search_terms, orm_lookups)
-        cyrillic_conditions = self.process_terms(cyrillic_processor, search_terms, orm_lookups)
+        latin_terms = self.process_terms(latin_processor, search_terms)
+        latin_conditions = self.process_conditions(latin_terms, orm_lookups)
+        cyrillic_terms = self.process_terms(cyrillic_processor, search_terms)
+        cyrillic_conditions = self.process_conditions(cyrillic_terms, orm_lookups)
 
         combined_latin_conditions = reduce(operator.and_, latin_conditions)
         combined_cyrillic_conditions = reduce(operator.and_, cyrillic_conditions)
