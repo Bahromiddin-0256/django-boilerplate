@@ -1,5 +1,4 @@
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
@@ -13,12 +12,12 @@ class FrontendTranslationView(ListAPIView):
     serializer_class = serializers.FrontendTranslationSerializer
     permission_classes = (AllowAny,)
 
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter(
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
                 name="key",
-                in_=openapi.IN_QUERY,
-                type=openapi.TYPE_STRING,
+                type=str,
+                location=OpenApiParameter.QUERY,
                 description="Key",
             )
         ]

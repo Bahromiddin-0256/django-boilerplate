@@ -18,6 +18,8 @@ help:
 	@echo "  Production:"
 	@echo "    make prod             - Start production environment"
 	@echo "    make prod-build       - Build and start production environment"
+    @echo "    make prod-migrate     - Run database migrations production"
+	@echo "    make prod-makemigrations   - Create new migrations production"
 	@echo ""
 	@echo "  Common:"
 	@echo "    make build            - Build all Docker images"
@@ -25,8 +27,8 @@ help:
 	@echo "    make logs             - View container logs"
 	@echo "    make shell            - Open Django shell"
 	@echo "    make bash             - Open bash in web container"
-	@echo "    make migrate          - Run database migrations"
-	@echo "    make makemigrations   - Create new migrations"
+	@echo "    make dev-migrate      - Run database migrations development"
+	@echo "    make dev-makemigrations   - Create new migrations"
 	@echo "    make createsuperuser  - Create Django superuser"
 	@echo "    make collectstatic    - Collect static files"
 	@echo "    make clean            - Remove all containers, volumes, and images"
@@ -114,10 +116,10 @@ shell:
 bash:
 	docker compose -f docker-compose.yml -f docker-compose.dev.yml exec web bash
 
-migrate:
+dev-migrate:
 	docker compose -f docker-compose.yml -f docker-compose.dev.yml exec web python manage.py migrate
 
-makemigrations:
+dev-makemigrations:
 	docker compose -f docker-compose.yml -f docker-compose.dev.yml exec web python manage.py makemigrations
 
 createsuperuser:
