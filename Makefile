@@ -18,8 +18,8 @@ help:
 	@echo "  Production:"
 	@echo "    make prod             - Start production environment"
 	@echo "    make prod-build       - Build and start production environment"
-    @echo "    make prod-migrate     - Run database migrations production"
-	@echo "    make prod-makemigrations   - Create new migrations production"
+	@echo "    make prod-migrate     - Run database migrations production"
+	@echo "    make prod-makemigrations - Create new migrations production"
 	@echo ""
 	@echo "  Common:"
 	@echo "    make build            - Build all Docker images"
@@ -76,6 +76,12 @@ prod-build:
 
 prod-logs:
 	docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f
+
+prod-migrate:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml exec web python manage.py migrate
+
+prod-makemigrations:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml exec web python manage.py makemigrations
 
 # =============================================================================
 # Build
