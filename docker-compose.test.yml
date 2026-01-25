@@ -1,26 +1,48 @@
+# Test Environment Override
+# Usage: docker compose -f docker-compose.yml -f docker-compose.test.yml up --abort-on-container-exit
+# CI Usage: docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm web
+
 services:
   web:
-    build: .
-    command: python manage.py test
-    volumes:
-      - .:/app
-    env_file:
-      - .env
+    build:
+      target: test
+    command: python manage.py test --verbosity=2 --keepdb
     environment:
-      - DB_HOST=db
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379
+      - DEBUG=0
       - DJANGO_SETTINGS_MODULE=core.settings.test
-    depends_on:
-      - db
-      - redis
+      - DB_NAME=test_db
+    restart: "no"
+    # No ports exposed for testing
+
+  # Disable Celery workers for unit tests (tasks run eagerly)
+  celery:
+    profiles:
+      - integration
+    build:
+      target: test
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings.test
+    restart: "no"
+
+  celery-beat:
+    profiles:
+      - integration
+    build:
+      target: test
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings.test
+    restart: "no"
 
   db:
-    image: postgres:17
     environment:
-      - POSTGRES_DB=${DB_NAME:-test_db}
-      - POSTGRES_USER=${DB_USER:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      POSTGRES_DB: test_db
+    # Use tmpfs for faster test database
+    tmpfs:
+      - /var/lib/postgresql/data
+    restart: "no"
 
   redis:
-    image: redis:7
+    # Use tmpfs for faster test cache
+    tmpfs:
+      - /data
+    restart: "no"

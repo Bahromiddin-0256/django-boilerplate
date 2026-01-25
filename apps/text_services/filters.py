@@ -3,7 +3,6 @@ from functools import reduce
 from typing import List
 
 from django.db.models import Q
-from rest_framework.compat import distinct
 from rest_framework.filters import SearchFilter
 
 from apps.text_services import cyrillic_latin_translator
@@ -49,6 +48,6 @@ class MultiSymbolSearchFilter(SearchFilter):
 
         queryset = queryset.filter(Q(combined_latin_conditions) | Q(combined_cyrillic_conditions))
         if self.must_call_distinct(queryset, search_fields):
-            queryset = distinct(queryset, base)
+            queryset = queryset.distinct()
 
         return queryset

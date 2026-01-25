@@ -1,0 +1,87 @@
+# Development Environment Override
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  web:
+    build:
+      target: development
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - /app/.venv  # Exclude venv from bind mount
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+      - DJANGO_SETTINGS_MODULE=core.settings.develop
+    stdin_open: true
+    tty: true
+    restart: "no"
+
+  celery:
+    build:
+      target: development
+    volumes:
+      - .:/app
+      - /app/.venv
+    environment:
+      - DEBUG=1
+      - DJANGO_SETTINGS_MODULE=core.settings.develop
+    restart: "no"
+
+  celery-beat:
+    build:
+      target: development
+    volumes:
+      - .:/app
+      - /app/.venv
+    environment:
+      - DEBUG=1
+      - DJANGO_SETTINGS_MODULE=core.settings.develop
+    restart: "no"
+
+  db:
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    restart: "no"
+
+  redis:
+#    ports:
+#      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    restart: "no"
+
+  # Optional: PgAdmin for database management in development
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - db
+    restart: "no"
+    profiles:
+      - tools
+
+  # Optional: Mailpit for email testing in development
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP
+    restart: "no"
+    profiles:
+      - tools
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+  pgadmin_data:

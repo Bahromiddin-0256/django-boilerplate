@@ -1,0 +1,83 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info
+dist
+build
+eggs
+.eggs
+lib
+lib64
+parts
+sdist
+var
+wheels
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+.env.local
+.venv
+venv
+ENV
+env
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Testing
+.tox
+.nox
+.coverage
+.coverage.*
+htmlcov
+.pytest_cache
+.hypothesis
+
+# Documentation
+docs/_build
+*.md
+!README.md
+
+# Docker (keep docker/ dir but ignore compose files during build)
+Dockerfile*
+docker-compose*.yml
+.docker
+docker/nginx/certs/*.pem
+docker/nginx/certs/*.key
+docker/nginx/certs/*.crt
+!docker/nginx/certs/.gitkeep
+
+# Local development
+*.log
+*.pot
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+.static/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Pre-commit
+.pre-commit-config.yaml
+
+# Project specific
+.python-version
+pyproject.toml
