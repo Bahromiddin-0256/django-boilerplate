@@ -1,0 +1,26 @@
+services:
+  web:
+    build: .
+    command: python manage.py test
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379
+      - DJANGO_SETTINGS_MODULE=core.settings.test
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:17
+    environment:
+      - POSTGRES_DB=${DB_NAME:-test_db}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+
+  redis:
+    image: redis:7
