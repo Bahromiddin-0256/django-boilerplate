@@ -9,6 +9,7 @@ help:
 	@echo "    make dev              - Start development environment"
 	@echo "    make dev-build        - Build and start development environment"
 	@echo "    make dev-tools        - Start dev environment with pgadmin & mailpit"
+	@echo "    make dev-down         - Stop all containers"
 	@echo ""
 	@echo "  Testing:"
 	@echo "    make test             - Run tests"
@@ -20,6 +21,7 @@ help:
 	@echo "    make prod-build       - Build and start production environment"
 	@echo "    make prod-migrate     - Run database migrations production"
 	@echo "    make prod-makemigrations - Create new migrations production"
+	@echo "    make prod-down        - Stop all containers"
 	@echo ""
 	@echo "  Common:"
 	@echo "    make build            - Build all Docker images"
@@ -103,6 +105,15 @@ build-prod:
 # =============================================================================
 down:
 	docker compose down
+
+prod-down:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+
+prod-ps:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+
+dev-down:
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 
 down-volumes:
 	docker compose down -v

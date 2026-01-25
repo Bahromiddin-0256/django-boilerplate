@@ -37,7 +37,7 @@ services:
 
   celery-beat:
     <<: *app-common
-    command: celery -A core beat -l INFO
+    command: celery -A core beat -l INFO --schedule=/tmp/celerybeat-schedule
     depends_on:
       db:
         condition: service_healthy

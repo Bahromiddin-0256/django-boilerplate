@@ -8,3 +8,4 @@ djangorestframework
 django-filter
 django-modeltranslation
 celery[redis]
+factory-boy

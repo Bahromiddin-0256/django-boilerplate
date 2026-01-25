@@ -5,7 +5,7 @@ services:
   web:
     build:
       target: development
-    command: python manage.py runserver 0.0.0.0:8000
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 2 --worker-tmp-dir /dev/shm --access-logfile - --error-logfile -r
     volumes:
       - .:/app
       - /app/.venv  # Exclude venv from bind mount

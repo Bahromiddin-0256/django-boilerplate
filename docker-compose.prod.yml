@@ -11,14 +11,16 @@ services:
       - DJANGO_RUN_MIGRATIONS=true
     expose:
       - "8000"
+    ports:
+      - "8000:8000"
     deploy:
-      resources:
-        limits:
-          cpus: "1.0"
-          memory: 512M
-        reservations:
-          cpus: "0.25"
-          memory: 256M
+#      resources:
+#        limits:
+#          cpus: "1.0"
+#          memory: 512M
+#        reservations:
+#          cpus: "0.25"
+#          memory: 256M
       restart_policy:
         condition: on-failure
         delay: 5s
@@ -69,7 +71,7 @@ services:
     environment:
       - DEBUG=0
       - DJANGO_SETTINGS_MODULE=core.settings.production
-    command: celery -A core beat -l WARNING
+    command: celery -A core beat -l WARNING --schedule=/tmp/celerybeat-schedule
     deploy:
       resources:
         limits:
@@ -88,14 +90,14 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    deploy:
-      resources:
-        limits:
-          cpus: "1.0"
-          memory: 1G
-        reservations:
-          cpus: "0.25"
-          memory: 256M
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: "1.0"
+#          memory: 1G
+#        reservations:
+#          cpus: "0.25"
+#          memory: 256M
     command:
       - "postgres"
       - "-c"
@@ -144,31 +146,31 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Nginx reverse proxy for production
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
-      - static_volume:/app/staticfiles:ro
-      - media_volume:/app/media:ro
-      - ./docker/nginx/certs:/etc/nginx/certs:ro
-    depends_on:
-      web:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+#  # Nginx reverse proxy for production
+#  nginx:
+#    image: nginx:alpine
+#    ports:
+#      - "8000:80"
+#      - "443:443"
+#    volumes:
+#      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+#      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+#      - static_volume:/app/staticfiles:ro
+#      - media_volume:/app/media:ro
+#      - ./docker/nginx/certs:/etc/nginx/certs:ro
+#    depends_on:
+#      web:
+#        condition: service_healthy
+#    healthcheck:
+#      test: ["CMD", "nginx", "-t"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#    logging:
+#      driver: "json-file"
+#      options:
+#        max-size: "10m"
+#        max-file: "3"
 
 volumes:
   postgres_prod_data:
