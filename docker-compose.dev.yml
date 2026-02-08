@@ -5,7 +5,7 @@ services:
   web:
     build:
       target: development
-    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 2 --worker-tmp-dir /dev/shm --access-logfile - --error-logfile -r
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 2 --worker-tmp-dir /dev/shm --access-logfile - --error-logfile - --reload
     volumes:
       - .:/app
       - /app/.venv  # Exclude venv from bind mount
@@ -81,7 +81,65 @@ services:
     profiles:
       - tools
 
+  # Loki - Log aggregation
+  loki:
+    image: grafana/loki:3.0.0
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./docker/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: "no"
+    user: "0"  # Run as root to avoid permission issues with /loki directory
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Promtail - Log shipper
+  promtail:
+    image: grafana/promtail:3.0.0
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./docker/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: "no"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Grafana - Log visualization
+  grafana:
+    image: grafana/grafana:10.4.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3000}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - loki
+    restart: "no"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   postgres_dev_data:
   redis_dev_data:
   pgadmin_data:
+  loki_data:
+  grafana_data:

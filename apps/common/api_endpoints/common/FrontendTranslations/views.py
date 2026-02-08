@@ -1,3 +1,5 @@
+import logging
+
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status
 from rest_framework.generics import ListAPIView
@@ -5,7 +7,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from apps.common import models
+from apps.common.middleware.logging_middleware import get_correlation_id
 from . import serializers
+
+logger = logging.getLogger("apps.common.frontend_translations")
 
 
 class FrontendTranslationView(ListAPIView):
@@ -23,11 +28,31 @@ class FrontendTranslationView(ListAPIView):
         ]
     )
     def get(self, request):
-        # translation.activate(lang)
+        corr_id = get_correlation_id()
+        key = request.GET.get("key")
+
+        logger.info(
+            "Fetching frontend translations",
+            extra={
+                "correlation_id": corr_id,
+                "filter_key": key,
+                "user_id": str(request.user) if request.user.is_authenticated else None,
+            }
+        )
+
         serializer = self.get_serializer(self.get_queryset(), many=True)
         data = {}
         for obj in serializer.data:
             data[obj["key"]] = obj["text"]
+
+        logger.info(
+            "Frontend translations fetched",
+            extra={
+                "correlation_id": corr_id,
+                "translation_count": len(data),
+            }
+        )
+
         return Response(data, status=status.HTTP_200_OK)
 
     def get_queryset(self):

@@ -9,3 +9,4 @@ django-filter
 django-modeltranslation
 celery[redis]
 factory-boy
+python-json-logger>=2.0.7

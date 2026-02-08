@@ -9,12 +9,14 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
+import logging
 import os
-import tempfile
 import sys
+import tempfile
 from pathlib import Path
 
 import environ
+from pythonjsonlogger import jsonlogger
 
 from core.jazzmin_conf import *  # noqa
 
@@ -88,6 +90,7 @@ SPECTACULAR_SETTINGS = {
 INSTALLED_APPS = DJANGO_APPS + CUSTOM_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
+    "apps.common.middleware.LoggingMiddleware",  # Must be first to capture correlation ID
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -200,3 +203,98 @@ CELERY_TIMEZONE = "Asia/Tashkent"
 
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+LOG_LEVEL = env.str("LOG_LEVEL", "INFO")
+
+
+# Custom JSON formatter that includes correlation ID
+class CorrelationIdJsonFormatter(jsonlogger.JsonFormatter):
+    def add_fields(self, log_record, record, message_dict):
+        super().add_fields(log_record, record, message_dict)
+        # Add correlation ID if available
+        from apps.common.middleware.logging_middleware import get_correlation_id
+
+        corr_id = get_correlation_id()
+        if corr_id:
+            log_record["correlation_id"] = corr_id
+        # Add standard fields
+        log_record["service"] = "django-api"
+        log_record["environment"] = "production" if not DEBUG else "development"
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": "core.settings.base.CorrelationIdJsonFormatter",
+            "format": "%(asctime)s %(levelname)s %(name)s %(message)s %(pathname)s %(lineno)d %(funcName)s %(threadName)s %(service)s %(environment)s",
+        },
+        "verbose": {
+            "format": "[{asctime}] [{levelname}] [{name}] [%(correlation_id)s] {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json" if env.bool("JSON_LOGGING", True) else "verbose",
+            "stream": sys.stdout,
+        },
+        "null": {
+            "class": "logging.NullHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": LOG_LEVEL,
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["null"],  # Silence runserver's default logging, we use our middleware
+            "propagate": False,
+        },
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": "WARNING",  # Set to DEBUG to log all SQL queries
+            "propagate": False,
+        },
+        "apps": {
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "apps.common.middleware": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "celery": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "celery.task": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
